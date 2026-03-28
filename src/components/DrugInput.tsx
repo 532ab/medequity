@@ -20,6 +20,36 @@ interface SmartSuggestion {
   label?: string;
 }
 
+// Common drugs for instant results before API responds
+const COMMON_DRUGS = [
+  "Ibuprofen", "Acetaminophen", "Aspirin", "Metformin", "Lisinopril", "Atorvastatin",
+  "Amoxicillin", "Omeprazole", "Sertraline", "Amlodipine", "Metoprolol", "Losartan",
+  "Gabapentin", "Levothyroxine", "Fluoxetine", "Escitalopram", "Prednisone", "Albuterol",
+  "Hydrochlorothiazide", "Tramadol", "Naproxen", "Loratadine", "Cetirizine", "Warfarin",
+  "Clopidogrel", "Pantoprazole", "Duloxetine", "Venlafaxine", "Bupropion", "Trazodone",
+  "Ciprofloxacin", "Azithromycin", "Doxycycline", "Meloxicam", "Cyclobenzaprine",
+  "Furosemide", "Spironolactone", "Rosuvastatin", "Simvastatin", "Montelukast",
+  "Famotidine", "Ranitidine", "Diphenhydramine", "Hydroxyzine", "Buspirone",
+  "Clonazepam", "Diazepam", "Alprazolam", "Lorazepam", "Zolpidem",
+  "Advil", "Tylenol", "Motrin", "Aleve", "Benadryl", "Zyrtec", "Claritin",
+  "Lipitor", "Zoloft", "Nexium", "Prilosec", "Synthroid", "Glucophage",
+];
+
+function fuzzyMatch(query: string, target: string): boolean {
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+  if (t.startsWith(q)) return true;
+  if (t.includes(q)) return true;
+  // Simple typo tolerance — allow 1 char difference for queries > 3 chars
+  if (q.length > 3) {
+    for (let i = 0; i < q.length; i++) {
+      const without = q.slice(0, i) + q.slice(i + 1);
+      if (t.startsWith(without) || t.includes(without)) return true;
+    }
+  }
+  return false;
+}
+
 export default function DrugInput({ value, onChange, placeholder, prefix, required, showScanner = false }: DrugInputProps) {
   const [suggestions, setSuggestions] = useState<SmartSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -41,59 +71,86 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
   }, []);
 
   useEffect(() => {
-    if (!value.trim() || value.length < 2) {
+    if (!value.trim() || value.length < 1) {
       setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
     clearTimeout(debounceRef.current);
     clearTimeout(aiDebounceRef.current);
 
-    // FDA search — fast, runs first
-    debounceRef.current = setTimeout(async () => {
-      try {
-        // Search both brand and generic names
-        const query = encodeURIComponent(value);
-        const res = await fetch(
-          `https://api.fda.gov/drug/label.json?search=(openfda.brand_name:"${query}"+openfda.generic_name:"${query}")&limit=6`
-        );
-        if (!res.ok) {
-          setSuggestions([]);
-          // No FDA results — trigger AI fallback
-          triggerAiSearch(value);
-          return;
-        }
-        const data = await res.json();
-        const names: SmartSuggestion[] = [];
-        const seen = new Set<string>();
-        for (const result of data.results || []) {
-          const brandName = result.openfda?.brand_name?.[0];
-          const genericName = result.openfda?.generic_name?.[0];
-          // Add brand name
-          if (brandName && !seen.has(brandName.toLowerCase())) {
-            seen.add(brandName.toLowerCase());
-            names.push({ name: brandName, source: "fda" });
-          }
-          // Also add generic name if different
-          if (genericName && !seen.has(genericName.toLowerCase())) {
-            seen.add(genericName.toLowerCase());
-            names.push({ name: genericName, source: "fda" });
-          }
-        }
-        const limited = names.slice(0, 6);
-        setSuggestions(limited);
-        setShowSuggestions(limited.length > 0);
-        setHighlightIndex(-1);
+    // Instant local matches — shows immediately, no API call
+    const localMatches = COMMON_DRUGS
+      .filter((d) => fuzzyMatch(value, d))
+      .slice(0, 5)
+      .map((name): SmartSuggestion => ({ name, source: "fda" }));
 
-        // If few results, also try AI for better suggestions
-        if (limited.length < 2) {
-          triggerAiSearch(value);
+    if (localMatches.length > 0) {
+      setSuggestions(localMatches);
+      setShowSuggestions(true);
+      setHighlightIndex(-1);
+    }
+
+    // FDA API search — runs after short delay, adds more results
+    if (value.length >= 2) {
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const query = encodeURIComponent(value);
+          // Use wildcard search for partial matching
+          const res = await fetch(
+            `https://api.fda.gov/drug/label.json?search=(openfda.brand_name:${query}*+openfda.generic_name:${query}*)&limit=8`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const fdaNames: SmartSuggestion[] = [];
+            const seen = new Set(localMatches.map((m) => m.name.toLowerCase()));
+
+            for (const result of data.results || []) {
+              const brandName = result.openfda?.brand_name?.[0];
+              const genericName = result.openfda?.generic_name?.[0];
+              if (brandName && !seen.has(brandName.toLowerCase())) {
+                seen.add(brandName.toLowerCase());
+                fdaNames.push({ name: brandName, source: "fda" });
+              }
+              if (genericName && !seen.has(genericName.toLowerCase())) {
+                seen.add(genericName.toLowerCase());
+                fdaNames.push({ name: genericName, source: "fda" });
+              }
+            }
+
+            if (fdaNames.length > 0) {
+              setSuggestions((prev) => {
+                const existing = new Set(prev.map((p) => p.name.toLowerCase()));
+                const merged = [...prev];
+                for (const f of fdaNames) {
+                  if (!existing.has(f.name.toLowerCase())) {
+                    existing.add(f.name.toLowerCase());
+                    merged.push(f);
+                  }
+                }
+                return merged.slice(0, 8);
+              });
+              setShowSuggestions(true);
+            }
+          }
+
+          // If still few results, try AI
+          if (localMatches.length < 2) {
+            triggerAiSearch(value);
+          }
+        } catch {
+          if (localMatches.length === 0) {
+            triggerAiSearch(value);
+          }
         }
-      } catch {
-        setSuggestions([]);
-        triggerAiSearch(value);
-      }
-    }, 250);
+      }, 150);
+    }
+
+    // If no local matches and short query, try AI sooner
+    if (localMatches.length === 0 && value.length >= 3) {
+      triggerAiSearch(value);
+    }
 
     return () => {
       clearTimeout(debounceRef.current);
@@ -212,7 +269,7 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div id="drug-suggestions" role="listbox" className="absolute z-20 w-full mt-1 bg-[#f7f9f6] dark:bg-dark-card border border-sand dark:border-dark-border rounded-2xl shadow-lg overflow-hidden animate-fade-in">
+        <div id="drug-suggestions" role="listbox" className="absolute z-20 w-full mt-1 bg-[#f7f9f6] dark:bg-dark-card border border-sand dark:border-dark-border rounded-2xl shadow-lg overflow-hidden animate-fade-in" style={{ maxWidth: "calc(100% - 2rem)" }}>
           {suggestions.map((item, i) => (
             <button
               key={`${item.name}-${i}`}
