@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDrugLabel, getAdverseEvents, getReportsByYear, getOutcomes, getReportsBySex, getReportsByAge } from "@/lib/openFda";
+import { getDrugLabel, getAdverseEvents, getReportsByYear, getOutcomes, getReportsBySex, getReportsByAge, getRecalls } from "@/lib/openFda";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,13 +10,14 @@ export async function POST(req: NextRequest) {
 
     const name = medication.trim();
 
-    const [label, adverseEvents, reportsByYear, outcomes, reportsBySex, reportsByAge] = await Promise.all([
+    const [label, adverseEvents, reportsByYear, outcomes, reportsBySex, reportsByAge, recalls] = await Promise.all([
       getDrugLabel(name),
       getAdverseEvents(name),
       getReportsByYear(name),
       getOutcomes(name),
       getReportsBySex(name),
       getReportsByAge(name),
+      getRecalls(name),
     ]);
 
     if (!label) {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       outcomes,
       reportsBySex,
       reportsByAge,
+      recalls,
       disclaimer: "This information is for educational purposes only and is not medical advice. Always consult a healthcare professional.",
     });
   } catch {

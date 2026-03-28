@@ -21,7 +21,7 @@ interface Interaction {
 type SeverityKey = "high" | "moderate" | "low";
 
 export default function InteractionsPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const severityStyles = {
     high: {
@@ -61,6 +61,8 @@ export default function InteractionsPage() {
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<SeverityKey | "all">("all");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [aiExplanations, setAiExplanations] = useState<Record<number, string>>({});
+  const [aiLoading, setAiLoading] = useState<Record<number, boolean>>({});
   const [category, setCategory] = useState("all");
   const [symptoms, setSymptoms] = useState("");
   const [risk, setRisk] = useState<{ level: string; emoji: string; message: string; recommendation: string; flaggedSymptoms: string[] } | null>(null);
@@ -136,6 +138,23 @@ export default function InteractionsPage() {
       setError(t("interactions.failedToCheck"));
     }
     setLoading(false);
+  };
+
+  const fetchAiExplanation = async (index: number, drug1: string, drug2: string, fdaText: string, severity: string) => {
+    if (aiExplanations[index] || aiLoading[index]) return;
+    setAiLoading((prev) => ({ ...prev, [index]: true }));
+    try {
+      const res = await fetch("/api/ai-interaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drug1, drug2, fdaText, severity }),
+      });
+      const data = await res.json();
+      if (data.explanation) {
+        setAiExplanations((prev) => ({ ...prev, [index]: data.explanation }));
+      }
+    } catch { /* ignore */ }
+    setAiLoading((prev) => ({ ...prev, [index]: false }));
   };
 
   const validCount = drugs.filter((d) => d.trim()).length;
@@ -372,6 +391,38 @@ export default function InteractionsPage() {
                     </div>
 
                     <p className="text-sm text-body leading-relaxed mb-3">{ix.summary}</p>
+
+                    {/* AI Explanation */}
+                    {!aiExplanations[i] && !aiLoading[i] && (
+                      <button
+                        onClick={() => fetchAiExplanation(i, ix.drug1, ix.drug2, ix.description, ix.severity)}
+                        className="text-xs font-medium text-coral hover:text-lilly-red transition-colors flex items-center gap-1.5 mb-3"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        {locale === "es" ? "Explicar con IA" : "Explain with AI"}
+                      </button>
+                    )}
+                    {aiLoading[i] && (
+                      <div className="flex items-center gap-2 text-xs text-sub mb-3">
+                        <span className="w-3 h-3 border-2 border-coral/30 border-t-coral rounded-full animate-spin" />
+                        {locale === "es" ? "Generando explicación..." : "Generating explanation..."}
+                      </div>
+                    )}
+                    {aiExplanations[i] && (
+                      <div className="bg-[#f7f9f6] dark:bg-dark-bg border border-sand/60 dark:border-dark-border rounded-xl p-3 mb-3 animate-fade-in">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <svg className="w-3 h-3 text-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                          <span className="text-[10px] font-semibold text-coral uppercase tracking-wide">
+                            {locale === "es" ? "Explicación IA" : "AI Explanation"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-body leading-relaxed">{aiExplanations[i]}</p>
+                      </div>
+                    )}
 
                     {/* Risks */}
                     {ix.risks.length > 0 && (

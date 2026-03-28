@@ -37,6 +37,34 @@ export interface AgeData {
   count: number;
 }
 
+export interface RecallAlert {
+  description: string;
+  reason: string;
+  classification: string;
+  status: string;
+  date: string;
+}
+
+export async function getRecalls(drugName: string): Promise<RecallAlert[]> {
+  try {
+    const res = await fetch(
+      `${BASE_URL}/enforcement.json?search=(openfda.generic_name:"${encodeURIComponent(drugName)}"+openfda.brand_name:"${encodeURIComponent(drugName)}")+AND+status:"Ongoing"&limit=5`
+    );
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return (data.results || []).map((r: Record<string, string>) => ({
+      description: (r.product_description || "").slice(0, 200),
+      reason: r.reason_for_recall || "No reason provided",
+      classification: r.classification || "Unknown",
+      status: r.status || "Unknown",
+      date: r.recall_initiation_date || "",
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getDrugLabel(drugName: string): Promise<DrugLabel | null> {
   try {
     const res = await fetch(

@@ -12,7 +12,9 @@ import RiskBadge from "@/components/RiskBadge";
 import Disclaimer from "@/components/Disclaimer";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
 import MedicationChat from "@/components/MedicationChat";
-import { DrugLabel, AdverseEvent, ReportsByYear, OutcomeData, SexData, AgeData } from "@/lib/openFda";
+import RecallBanner from "@/components/RecallBanner";
+import DoctorEscalation from "@/components/DoctorEscalation";
+import { DrugLabel, AdverseEvent, ReportsByYear, OutcomeData, SexData, AgeData, RecallAlert } from "@/lib/openFda";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface RiskResult {
@@ -37,6 +39,7 @@ function ResultsContent() {
   const [outcomes, setOutcomes] = useState<OutcomeData[]>([]);
   const [reportsBySex, setReportsBySex] = useState<SexData[]>([]);
   const [reportsByAge, setReportsByAge] = useState<AgeData[]>([]);
+  const [recalls, setRecalls] = useState<RecallAlert[]>([]);
   const [risk, setRisk] = useState<RiskResult | null>(null);
 
   useEffect(() => {
@@ -66,6 +69,7 @@ function ResultsContent() {
         setOutcomes(medData.outcomes);
         setReportsBySex(medData.reportsBySex);
         setReportsByAge(medData.reportsByAge);
+        setRecalls(medData.recalls || []);
 
         if (symptomsParam) {
           const symptoms = symptomsParam.split(",").map((s) => s.trim()).filter(Boolean);
@@ -140,14 +144,23 @@ function ResultsContent() {
         </Link>
       </div>
 
+      {/* Recall Alert — most critical, shown first */}
+      <RecallBanner recalls={recalls} />
+
+      {/* Risk assessment + doctor escalation */}
       {risk && (
-        <RiskBadge
-          level={risk.level}
-          emoji={risk.emoji}
-          message={risk.message}
-          recommendation={risk.recommendation}
-          flaggedSymptoms={risk.flaggedSymptoms}
-        />
+        <>
+          {(risk.level === "high" || risk.level === "moderate") && (
+            <DoctorEscalation level={risk.level} flaggedSymptoms={risk.flaggedSymptoms} />
+          )}
+          <RiskBadge
+            level={risk.level}
+            emoji={risk.emoji}
+            message={risk.message}
+            recommendation={risk.recommendation}
+            flaggedSymptoms={risk.flaggedSymptoms}
+          />
+        </>
       )}
 
       {label && <DrugInfo label={label} />}
