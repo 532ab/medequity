@@ -54,7 +54,25 @@ export default function BarcodeScanner({ onScan }: BarcodeScannerProps) {
         }
       }
 
-      setError(locale === "es" ? "No se encontró medicamento para este código" : "No medication found for this barcode");
+      // FDA lookup failed — try AI fallback
+      try {
+        const aiRes = await fetch("/api/smart-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: `NDC barcode number: ${code}. What medication is this? It might be a UPC or NDC code from a drug bottle.` }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const aiName = aiData.correction || aiData.suggestions?.[0];
+          if (aiName) {
+            stopScanning();
+            onScan(aiName);
+            return;
+          }
+        }
+      } catch { /* ignore AI fallback failure */ }
+
+      setError(locale === "es" ? "No se encontró medicamento para este código. Intenta escribir el nombre." : "Couldn't identify this barcode. Try typing the drug name instead.");
     } catch {
       setError(locale === "es" ? "Error al buscar el código" : "Failed to look up barcode");
     }
