@@ -1,4 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="38" fill="#E21836"/>
-  <text x="96" y="106" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Arial,Helvetica,sans-serif" font-weight="bold" font-size="86">M</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E21836"/>
+      <stop offset="100%" stop-color="#d97757"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#bg)"/>
+  <!-- Medical cross subtle background -->
+  <rect x="76" y="32" width="40" height="128" rx="8" fill="white" opacity="0.12"/>
+  <rect x="32" y="76" width="128" height="40" rx="8" fill="white" opacity="0.12"/>
+  <!-- M letterform -->
+  <path d="M52 140V60l22 36h2l22-36v80h-14V92l-17 28h-2L48 92v48h-14zM108 140V60h14l24 50 24-50h14v80h-14V82l-20 42h-8l-20-42v58h-14z" fill="white" opacity="0"/>
+  <text x="96" y="112" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="-apple-system,SF Pro Display,Helvetica,Arial,sans-serif" font-weight="800" font-size="82" letter-spacing="-3">M</text>
+  <!-- Small EQ text -->
+  <text x="96" y="148" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="-apple-system,SF Pro Display,Helvetica,Arial,sans-serif" font-weight="600" font-size="22" letter-spacing="4" opacity="0.7">EQ</text>
+  <!-- Pulse line -->
+  <path d="M28 164 L56 164 L64 152 L72 176 L80 156 L86 164 L164 164" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
 </svg>
