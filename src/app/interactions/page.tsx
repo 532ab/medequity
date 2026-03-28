@@ -5,6 +5,7 @@ import Disclaimer from "@/components/Disclaimer";
 import DrugInput from "@/components/DrugInput";
 import RiskBadge from "@/components/RiskBadge";
 import { simplifyText } from "@/lib/openFda";
+import { CATEGORIES, POPULAR_DRUGS } from "@/lib/drugCategories";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface Interaction {
@@ -56,9 +57,11 @@ export default function InteractionsPage() {
   const [drugs, setDrugs] = useState(["", ""]);
   const [loading, setLoading] = useState(false);
   const [interactions, setInteractions] = useState<Interaction[] | null>(null);
+  const [checkedDrugs, setCheckedDrugs] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<SeverityKey | "all">("all");
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [category, setCategory] = useState("all");
   const [symptoms, setSymptoms] = useState("");
   const [risk, setRisk] = useState<{ level: string; emoji: string; message: string; recommendation: string; flaggedSymptoms: string[] } | null>(null);
 
@@ -75,6 +78,18 @@ export default function InteractionsPage() {
   const removeDrug = (index: number) => {
     if (drugs.length > 2) setDrugs(drugs.filter((_, i) => i !== index));
   };
+
+  const addQuickPick = (name: string) => {
+    const emptyIndex = drugs.findIndex((d) => !d.trim());
+    if (emptyIndex >= 0) {
+      updateDrug(emptyIndex, name);
+    } else if (drugs.length < 5) {
+      setDrugs([...drugs, name]);
+    }
+  };
+
+  const isAlreadyAdded = (name: string) =>
+    drugs.some((d) => d.trim().toLowerCase() === name.toLowerCase());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +114,7 @@ export default function InteractionsPage() {
         setError(data.error);
       } else {
         setInteractions(data.interactions);
+        setCheckedDrugs(data.checked);
       }
 
       // Check symptoms if provided
@@ -145,9 +161,65 @@ export default function InteractionsPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card max-w-2xl mx-auto space-y-4">
+      <form onSubmit={handleSubmit} className="card max-w-2xl mx-auto space-y-5">
+        {/* Category Filter */}
+        <div>
+          <label className="block text-sm font-medium text-body mb-2">{t("form.category")}</label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategory(cat.id)}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                  category === cat.id
+                    ? "bg-gradient-to-r from-lilly-red to-coral text-white shadow-sm"
+                    : "bg-sand/60 dark:bg-dark-border text-charcoal/60 dark:text-dark-muted hover:bg-sand dark:hover:bg-dark-border/80 hover:text-charcoal dark:hover:text-dark-text"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Picks */}
+        <div>
+          <label className="block text-sm font-medium text-body mb-2">{t("form.quickAdd")}</label>
+          <div className="flex flex-wrap gap-2">
+            {POPULAR_DRUGS[category].map((drug) => {
+              const added = isAlreadyAdded(drug);
+              return (
+                <button
+                  key={drug}
+                  type="button"
+                  onClick={() => !added && addQuickPick(drug)}
+                  disabled={added}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-200 border ${
+                    added
+                      ? "border-coral bg-coral/10 text-coral font-medium cursor-default"
+                      : "border-sand dark:border-dark-border bg-[#f7f9f6] dark:bg-dark-bg text-charcoal/60 dark:text-dark-muted hover:border-coral/40 hover:text-coral"
+                  }`}
+                >
+                  {added ? (
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {drug}
+                    </span>
+                  ) : (
+                    drug
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Drug Inputs */}
         <div className="space-y-2">
+          <label className="block text-sm font-medium text-body">{t("form.medicationsToCheck")}</label>
           {drugs.map((drug, i) => (
             <div key={i} className="flex gap-2">
               <div className="flex-1">
