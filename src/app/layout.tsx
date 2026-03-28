@@ -59,10 +59,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
               <div className="flex items-center gap-2 sm:gap-4">
                 <DesktopNav />
-                <div className="flex items-center gap-0.5">
-                  <TextSizeToggle />
+                <ThemeToggle />
+                <div className="flex items-center gap-0.5 border-l border-sand/60 dark:border-dark-border pl-2 ml-1">
                   <LanguageSwitcher />
-                  <ThemeToggle />
+                  <TextSizeToggle />
                 </div>
               </div>
             </div>
