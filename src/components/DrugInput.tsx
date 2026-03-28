@@ -31,7 +31,6 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
   useEffect(() => {
     if (!value.trim() || value.length < 2) {
       setSuggestions([]);
-      setShowSuggestions(false);
       return;
     }
 
@@ -68,6 +67,7 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
 
   const selectSuggestion = (name: string) => {
     onChange(name);
+    setSuggestions([]);
     setShowSuggestions(false);
     inputRef.current?.focus();
   };
@@ -126,8 +126,9 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
               role="option"
               aria-selected={i === highlightIndex}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => selectSuggestion(name)}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+              className={`w-full text-left px-4 py-3 text-sm transition-colors ${
                 i === highlightIndex
                   ? "bg-coral/10 text-coral"
                   : "text-heading hover:bg-cream dark:hover:bg-dark-border"

@@ -3,4 +3,6 @@ node_modules/
 *.tsbuildinfo
 next-env.d.ts
 .history/
+.env.local
+.env
 .vercel

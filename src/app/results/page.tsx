@@ -11,6 +11,7 @@ import DemographicsChart from "@/components/DemographicsChart";
 import RiskBadge from "@/components/RiskBadge";
 import Disclaimer from "@/components/Disclaimer";
 import ResultsSkeleton from "@/components/ResultsSkeleton";
+import MedicationChat from "@/components/MedicationChat";
 import { DrugLabel, AdverseEvent, ReportsByYear, OutcomeData, SexData, AgeData } from "@/lib/openFda";
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -150,6 +151,14 @@ function ResultsContent() {
       )}
 
       {label && <DrugInfo label={label} />}
+
+      {/* AI Chat */}
+      {label && (
+        <MedicationChat
+          drugName={label.brandName}
+          drugInfo={`Purpose: ${label.purpose}\nUsage: ${label.usage}\nDosage: ${label.dosage}\nWarnings: ${label.warnings.join(" | ")}`}
+        />
+      )}
 
       <SideEffectsChart events={adverseEvents} />
       <ReportsOverTimeChart data={reportsByYear} />

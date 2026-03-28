@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { DrugLabel } from "@/lib/openFda";
 import { useLanguage } from "@/lib/LanguageContext";
 import type { TranslationKey } from "@/lib/i18n";
@@ -10,40 +11,66 @@ const sections = [
   { key: "dosage", titleKey: "drugInfo.dosage" as TranslationKey, plainKey: "drugInfo.dosage.plain" as TranslationKey, icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" },
 ] as const;
 
+interface AiSummary {
+  purpose: string;
+  usage: string;
+  dosage: string;
+  warnings: string[];
+}
+
 function truncateAtBoundary(text: string, maxLen: number): string {
   const clean = text.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
   if (clean.length <= maxLen) return clean;
-
-  // Try to cut at a sentence boundary
   const trimmed = clean.slice(0, maxLen);
-  const lastSentence = Math.max(
-    trimmed.lastIndexOf(". "),
-    trimmed.lastIndexOf(".) "),
-    trimmed.lastIndexOf("? "),
-    trimmed.lastIndexOf("! "),
-  );
+  const lastSentence = Math.max(trimmed.lastIndexOf(". "), trimmed.lastIndexOf(".) "), trimmed.lastIndexOf("? "), trimmed.lastIndexOf("! "));
   if (lastSentence > maxLen * 0.4) return trimmed.slice(0, lastSentence + 1);
-
-  // Fall back to last comma or space
   const lastComma = trimmed.lastIndexOf(", ");
   if (lastComma > maxLen * 0.6) return trimmed.slice(0, lastComma + 1) + "...";
-
   const lastSpace = trimmed.lastIndexOf(" ");
   if (lastSpace > maxLen * 0.7) return trimmed.slice(0, lastSpace) + "...";
-
   return trimmed + "...";
 }
 
-function simplify(text: string): string {
-  return truncateAtBoundary(text, 350);
-}
-
-function simplifyWarning(text: string): string {
-  return truncateAtBoundary(text, 280);
-}
-
 export default function DrugInfo({ label }: { label: DrugLabel }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const [aiSummary, setAiSummary] = useState<AiSummary | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showFda, setShowFda] = useState(false);
+
+  useEffect(() => {
+    setAiLoading(true);
+    fetch("/api/ai-summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        drugName: label.brandName,
+        purpose: label.purpose,
+        usage: label.usage,
+        dosage: label.dosage,
+        warnings: label.warnings,
+        locale,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.summary) setAiSummary(data.summary);
+      })
+      .catch(() => {})
+      .finally(() => setAiLoading(false));
+  }, [label, locale]);
+
+  const getText = (key: string) => {
+    if (aiSummary) {
+      const aiValue = aiSummary[key as keyof AiSummary];
+      if (typeof aiValue === "string" && aiValue) return aiValue;
+    }
+    return truncateAtBoundary(label[key as "purpose" | "usage" | "dosage"], 350);
+  };
+
+  const getWarnings = () => {
+    if (aiSummary?.warnings?.length) return aiSummary.warnings;
+    return label.warnings.map((w) => truncateAtBoundary(w, 280));
+  };
 
   return (
     <div className="card space-y-5 animate-slide-up">
@@ -56,25 +83,38 @@ export default function DrugInfo({ label }: { label: DrugLabel }) {
             )}
           </h3>
         </div>
-        {label.genericAvailable && (
-          <span className="badge bg-coral/10 text-coral dark:bg-coral/20">
-            {t("drugInfo.genericAvailable")}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {aiSummary && (
+            <span className="badge bg-coral/10 text-coral dark:bg-coral/20 text-[10px]">
+              AI simplified
+            </span>
+          )}
+          {label.genericAvailable && (
+            <span className="badge bg-coral/10 text-coral dark:bg-coral/20">
+              {t("drugInfo.genericAvailable")}
+            </span>
+          )}
+        </div>
       </div>
 
+      {aiLoading && (
+        <div className="flex items-center gap-2 text-xs text-sub">
+          <span className="w-3 h-3 border-2 border-coral/30 border-t-coral rounded-full animate-spin" />
+          {locale === "es" ? "Simplificando con IA..." : "Simplifying with AI..."}
+        </div>
+      )}
+
       <div className="grid gap-4">
-        {sections.map(({ key, titleKey, plainKey, icon }) => (
+        {sections.map(({ key, titleKey, icon }) => (
           <div key={key} className="flex gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-icon flex items-center justify-center mt-0.5">
-              <svg className="w-4 h-4 text-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-icon flex items-center justify-center mt-0.5">
+              <svg className="w-4 h-4 text-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
               </svg>
             </div>
             <div>
               <h4 className="text-sm font-semibold text-heading mb-0.5">{t(titleKey)}</h4>
-              <p className="text-xs text-sub mb-1">{t(plainKey)}</p>
-              <p className="text-sm text-body leading-relaxed">{simplify(label[key])}</p>
+              <p className="text-sm text-body leading-relaxed">{getText(key)}</p>
             </div>
           </div>
         ))}
@@ -83,19 +123,44 @@ export default function DrugInfo({ label }: { label: DrugLabel }) {
       {/* Warnings */}
       <div className="border-t border-themed pt-4">
         <div className="flex items-center gap-2 mb-3">
-          <svg className="w-4 h-4 text-lilly-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4 text-lilly-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <h4 className="text-sm font-semibold text-lilly-red">{t("drugInfo.keyWarnings")}</h4>
         </div>
         <ul className="space-y-2">
-          {label.warnings.map((w, i) => (
+          {getWarnings().map((w, i) => (
             <li key={i} className="text-sm text-body leading-relaxed pl-4 border-l-2 border-lilly-red/20">
-              {simplifyWarning(w)}
+              {w}
             </li>
           ))}
         </ul>
       </div>
+
+      {/* FDA source toggle */}
+      {aiSummary && (
+        <div className="border-t border-themed pt-3">
+          <button
+            onClick={() => setShowFda(!showFda)}
+            className="text-xs font-medium text-coral hover:text-lilly-red transition-colors flex items-center gap-1"
+          >
+            {showFda ? "Hide" : "Show"} original FDA text
+            <svg className={`w-3 h-3 transition-transform ${showFda ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showFda && (
+            <div className="mt-3 space-y-3 text-xs text-sub leading-relaxed">
+              {sections.map(({ key, titleKey }) => (
+                <div key={key}>
+                  <p className="font-semibold text-heading text-xs mb-0.5">{t(titleKey)}</p>
+                  <p>{truncateAtBoundary(label[key as "purpose" | "usage" | "dosage"], 400)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
