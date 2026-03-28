@@ -10,13 +10,21 @@ interface DrugInputProps {
   required?: boolean;
 }
 
+interface SmartSuggestion {
+  name: string;
+  source: "fda" | "ai";
+  label?: string;
+}
+
 export default function DrugInput({ value, onChange, placeholder, prefix, required }: DrugInputProps) {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<SmartSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [aiSearching, setAiSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const aiDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -35,35 +43,111 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
     }
 
     clearTimeout(debounceRef.current);
+    clearTimeout(aiDebounceRef.current);
+
+    // FDA search — fast, runs first
     debounceRef.current = setTimeout(async () => {
       try {
+        // Search both brand and generic names
+        const query = encodeURIComponent(value);
         const res = await fetch(
-          `https://api.fda.gov/drug/label.json?search=openfda.brand_name:"${encodeURIComponent(value)}"&limit=6`
+          `https://api.fda.gov/drug/label.json?search=(openfda.brand_name:"${query}"+openfda.generic_name:"${query}")&limit=6`
         );
         if (!res.ok) {
           setSuggestions([]);
+          // No FDA results — trigger AI fallback
+          triggerAiSearch(value);
           return;
         }
         const data = await res.json();
-        const names: string[] = [];
+        const names: SmartSuggestion[] = [];
         const seen = new Set<string>();
         for (const result of data.results || []) {
-          const name = result.openfda?.brand_name?.[0] || result.openfda?.generic_name?.[0];
-          if (name && !seen.has(name.toLowerCase())) {
-            seen.add(name.toLowerCase());
-            names.push(name);
+          const brandName = result.openfda?.brand_name?.[0];
+          const genericName = result.openfda?.generic_name?.[0];
+          // Add brand name
+          if (brandName && !seen.has(brandName.toLowerCase())) {
+            seen.add(brandName.toLowerCase());
+            names.push({ name: brandName, source: "fda" });
+          }
+          // Also add generic name if different
+          if (genericName && !seen.has(genericName.toLowerCase())) {
+            seen.add(genericName.toLowerCase());
+            names.push({ name: genericName, source: "fda" });
           }
         }
-        setSuggestions(names);
-        setShowSuggestions(names.length > 0);
+        const limited = names.slice(0, 6);
+        setSuggestions(limited);
+        setShowSuggestions(limited.length > 0);
         setHighlightIndex(-1);
+
+        // If few results, also try AI for better suggestions
+        if (limited.length < 2) {
+          triggerAiSearch(value);
+        }
       } catch {
         setSuggestions([]);
+        triggerAiSearch(value);
       }
-    }, 300);
+    }, 250);
 
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      clearTimeout(debounceRef.current);
+      clearTimeout(aiDebounceRef.current);
+    };
   }, [value]);
+
+  const triggerAiSearch = (query: string) => {
+    clearTimeout(aiDebounceRef.current);
+    aiDebounceRef.current = setTimeout(async () => {
+      setAiSearching(true);
+      try {
+        const res = await fetch("/api/smart-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const aiSuggestions: SmartSuggestion[] = [];
+
+        if (data.correction) {
+          aiSuggestions.push({
+            name: data.correction,
+            source: "ai",
+            label: data.isDescription ? undefined : "Did you mean?",
+          });
+        }
+
+        if (data.suggestions) {
+          for (const s of data.suggestions) {
+            if (s !== data.correction) {
+              aiSuggestions.push({
+                name: s,
+                source: "ai",
+                label: data.isDescription ? "Suggested" : undefined,
+              });
+            }
+          }
+        }
+
+        setSuggestions((prev) => {
+          const existing = new Set(prev.map((p) => p.name.toLowerCase()));
+          const merged = [...prev];
+          for (const ai of aiSuggestions) {
+            if (!existing.has(ai.name.toLowerCase())) {
+              existing.add(ai.name.toLowerCase());
+              merged.push(ai);
+            }
+          }
+          return merged.slice(0, 8);
+        });
+        setShowSuggestions(true);
+      } catch { /* ignore */ }
+      setAiSearching(false);
+    }, 100);
+  };
 
   const selectSuggestion = (name: string) => {
     onChange(name);
@@ -82,7 +166,7 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
       setHighlightIndex((i) => (i - 1 + suggestions.length) % suggestions.length);
     } else if (e.key === "Enter" && highlightIndex >= 0) {
       e.preventDefault();
-      selectSuggestion(suggestions[highlightIndex]);
+      selectSuggestion(suggestions[highlightIndex].name);
     } else if (e.key === "Escape") {
       setShowSuggestions(false);
     }
@@ -94,7 +178,7 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
         {prefix && (
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-sub w-5">{prefix}</span>
         )}
-        <svg className={`absolute ${prefix ? "left-9" : "left-3.5"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted dark:text-dark-muted`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className={`absolute ${prefix ? "left-9" : "left-3.5"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted dark:text-dark-muted`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -118,25 +202,39 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div id="drug-suggestions" role="listbox" className="absolute z-20 w-full mt-1 bg-[#f7f9f6] dark:bg-dark-card border border-sand dark:border-dark-border rounded-xl shadow-lg overflow-hidden animate-fade-in">
-          {suggestions.map((name, i) => (
+        <div id="drug-suggestions" role="listbox" className="absolute z-20 w-full mt-1 bg-[#f7f9f6] dark:bg-dark-card border border-sand dark:border-dark-border rounded-2xl shadow-lg overflow-hidden animate-fade-in">
+          {suggestions.map((item, i) => (
             <button
-              key={name}
+              key={`${item.name}-${i}`}
               id={`suggestion-${i}`}
               role="option"
               aria-selected={i === highlightIndex}
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => selectSuggestion(name)}
-              className={`w-full text-left px-4 py-3 text-sm transition-colors ${
+              onClick={() => selectSuggestion(item.name)}
+              className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center justify-between ${
                 i === highlightIndex
                   ? "bg-coral/10 text-coral"
                   : "text-heading hover:bg-cream dark:hover:bg-dark-border"
               }`}
             >
-              <span className="font-medium">{name}</span>
+              <span className="font-medium">{item.name}</span>
+              {item.source === "ai" && item.label && (
+                <span className="text-[10px] font-medium text-coral bg-coral/10 dark:bg-coral/20 px-2 py-0.5 rounded-full">
+                  {item.label}
+                </span>
+              )}
+              {item.source === "ai" && !item.label && (
+                <span className="text-[10px] text-sub">AI</span>
+              )}
             </button>
           ))}
+          {aiSearching && (
+            <div className="px-4 py-2.5 flex items-center gap-2 text-xs text-sub border-t border-sand/60 dark:border-dark-border">
+              <span className="w-3 h-3 border-2 border-coral/30 border-t-coral rounded-full animate-spin" />
+              Searching with AI...
+            </div>
+          )}
         </div>
       )}
     </div>
