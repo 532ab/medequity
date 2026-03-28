@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 
+import BarcodeScanner from "@/components/BarcodeScanner";
+
 interface DrugInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   prefix?: string;
   required?: boolean;
+  showScanner?: boolean;
 }
 
 interface SmartSuggestion {
@@ -16,7 +19,7 @@ interface SmartSuggestion {
   label?: string;
 }
 
-export default function DrugInput({ value, onChange, placeholder, prefix, required }: DrugInputProps) {
+export default function DrugInput({ value, onChange, placeholder, prefix, required, showScanner = false }: DrugInputProps) {
   const [suggestions, setSuggestions] = useState<SmartSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
@@ -173,32 +176,37 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
   };
 
   return (
-    <div className="relative" ref={wrapperRef}>
-      <div className="relative">
-        {prefix && (
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-sub w-5">{prefix}</span>
+    <div className="space-y-2" ref={wrapperRef}>
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          {prefix && (
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-sub w-5">{prefix}</span>
+          )}
+          <svg className={`absolute ${prefix ? "left-9" : "left-3.5"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted dark:text-dark-muted`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            placeholder={placeholder}
+            className={`input-field ${prefix ? "pl-[3.5rem]" : "pl-10"}`}
+            required={required}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={showSuggestions && suggestions.length > 0}
+            aria-controls="drug-suggestions"
+            aria-autocomplete="list"
+            aria-activedescendant={highlightIndex >= 0 ? `suggestion-${highlightIndex}` : undefined}
+            aria-label={placeholder || "Search for a medication"}
+          />
+        </div>
+        {showScanner && (
+          <BarcodeScanner onScan={(name) => { onChange(name); }} />
         )}
-        <svg className={`absolute ${prefix ? "left-9" : "left-3.5"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted dark:text-dark-muted`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder}
-          className={`input-field ${prefix ? "pl-[3.5rem]" : "pl-10"}`}
-          required={required}
-          autoComplete="off"
-          role="combobox"
-          aria-expanded={showSuggestions && suggestions.length > 0}
-          aria-controls="drug-suggestions"
-          aria-autocomplete="list"
-          aria-activedescendant={highlightIndex >= 0 ? `suggestion-${highlightIndex}` : undefined}
-          aria-label={placeholder || "Search for a medication"}
-        />
       </div>
 
       {showSuggestions && suggestions.length > 0 && (

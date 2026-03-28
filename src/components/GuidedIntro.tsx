@@ -117,6 +117,7 @@ export default function GuidedIntro() {
           onChange={setMedication}
           placeholder={t("guided.typeAMedication")}
           required
+          showScanner
         />
       </div>
 
