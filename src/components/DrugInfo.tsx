@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { DrugLabel } from "@/lib/openFda";
 import { useLanguage } from "@/lib/LanguageContext";
+import ReadAloud from "@/components/ReadAloud";
 import type { TranslationKey } from "@/lib/i18n";
 
 const sections = [
@@ -136,6 +137,9 @@ export default function DrugInfo({ label }: { label: DrugLabel }) {
             </span>
           )}
         </div>
+
+        {/* Read Aloud */}
+        <ReadAloud text={`${label.brandName}. ${getText("purpose")} ${getText("usage")} ${getText("dosage")} Warnings: ${getWarnings().join(". ")}`} />
       </div>
 
       {aiLoading && (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import BarcodeScanner from "@/components/BarcodeScanner";
+import VoiceInput from "@/components/VoiceInput";
 
 interface DrugInputProps {
   value: string;
@@ -204,6 +205,7 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
             aria-label={placeholder || "Search for a medication"}
           />
         </div>
+        <VoiceInput onResult={(text) => { onChange(text); }} />
         {showScanner && (
           <BarcodeScanner onScan={(name) => { onChange(name); }} />
         )}
