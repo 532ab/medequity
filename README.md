@@ -1,24 +1,46 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Med-Equity-E21836?style=for-the-badge&labelColor=eef1ec&color=E21836" alt="MedEquity" />
-
-<br /><br />
+# MedEquity
 
 **Your prescriptions, in words you understand.**
 
 [**Live Demo →**](https://medequity.vercel.app)
 
-<br />
-
-![sage](https://img.shields.io/badge/%20%20-eef1ec?style=flat-square) ![red](https://img.shields.io/badge/%20%20-E21836?style=flat-square) ![coral](https://img.shields.io/badge/%20%20-d97757?style=flat-square) ![charcoal](https://img.shields.io/badge/%20%20-1c2118?style=flat-square)
-
 </div>
 
 ---
 
-MedEquity turns dense FDA drug labels into clear, plain-language information. Search any medication, check interactions between your drugs, compare side effect profiles, and assess your symptoms — all backed by real data from the [openFDA API](https://open.fda.gov/).
+MedEquity is a medication safety tool that translates FDA drug data into plain language. Built for patients who struggle to understand their prescriptions — particularly elderly, low-income, and non-English-speaking communities.
 
-Full English/Spanish support. Dark mode. No accounts, no stored data.
+### Features
+
+**AI-Powered Drug Summaries** — Claude translates dense FDA label text into simple, plain-language explanations. Purpose, dosage, usage, and warnings rewritten so anyone can understand them. Original FDA text available via toggle.
+
+**Medication Q&A Chat** — Ask questions about any medication in natural language. "Can I take this with alcohol?" "Is this safe during pregnancy?" Powered by Claude Sonnet with FDA label data as context. Includes suggested questions and conversation history.
+
+**Drug Interaction Checker** — Enter 2–5 medications and get specific risks, not generic disclaimers. Known interaction database covers NSAIDs + anticoagulants, SSRIs + serotonergic drugs, ACE inhibitors + potassium, statins + CYP inhibitors, and more. AI explains each interaction in plain language on demand.
+
+**FDA Recall Alerts** — Automatically checks for active FDA recalls on any searched medication. Shows recall class, reason, date, and plain-language severity explanation.
+
+**Medication Comparison** — Side-by-side view of two drugs with merged adverse event chart, purpose/dosage/warnings comparison, and color-coded profiles.
+
+**Symptom Risk Assessment** — Enter current symptoms and get flagged if something needs attention. High-risk symptoms trigger a doctor escalation card with a Call 911 button, Poison Control, and Crisis Lifeline numbers.
+
+**FDA Data Visualizations** — Reported side effects (bar chart), adverse event reports over time (area chart), patient outcomes (donut chart), and demographics by sex and age group (bar charts). All from real openFDA data.
+
+**Bilingual** — Full English and Spanish support across all UI text, labels, and navigation. Toggle in the nav bar.
+
+**Dark Mode** — Full dark theme with system preference detection and manual toggle. Persists across sessions.
+
+**Progressive Web App** — Installable on iOS and Android. Offline caching, standalone mode, custom app icon.
+
+**Accessible** — Skip navigation, ARIA autocomplete on search, screen reader labels, keyboard navigation, WCAG AA color contrast.
+
+### Stack
+
+Next.js 15 · React 18 · TypeScript · Tailwind CSS · Recharts · Claude API · openFDA API
+
+No database. No accounts. No stored data. Everything processes in real time.
 
 ### Run locally
 
@@ -27,9 +49,7 @@ npm install
 npm run dev
 ```
 
-### Stack
-
-Next.js 15 · React 18 · TypeScript · Tailwind CSS · Recharts
+Requires an `ANTHROPIC_API_KEY` in `.env.local` for AI features.
 
 ---
 
