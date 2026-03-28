@@ -180,7 +180,7 @@ export default function InteractionsPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card max-w-2xl mx-auto space-y-5">
+      <form onSubmit={handleSubmit} className="card max-w-2xl lg:max-w-4xl mx-auto space-y-5">
         {/* Category Filter */}
         <div>
           <label className="block text-sm font-medium text-body mb-2">{t("form.category")}</label>
@@ -309,13 +309,13 @@ export default function InteractionsPage() {
       </form>
 
       {error && (
-        <div className="max-w-2xl mx-auto text-center py-8">
+        <div className="max-w-2xl lg:max-w-4xl mx-auto text-center py-8">
           <p className="text-lilly-red font-medium">{error}</p>
         </div>
       )}
 
       {risk && (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl lg:max-w-4xl mx-auto">
           <RiskBadge
             level={risk.level as "low" | "moderate" | "high"}
             emoji={risk.emoji}
@@ -327,7 +327,7 @@ export default function InteractionsPage() {
       )}
 
       {interactions !== null && (
-        <div className="max-w-2xl mx-auto space-y-4 animate-slide-up">
+        <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 animate-slide-up">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 className="text-lg font-bold text-heading">
               {interactions.length} {interactions.length !== 1 ? t("interactions.foundPlural") : t("interactions.found")} {t("interactions.found.suffix")}

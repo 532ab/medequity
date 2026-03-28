@@ -27,7 +27,7 @@ export default function Home() {
       </div>
 
       {/* Guided Search Card */}
-      <div className="card max-w-2xl mx-auto">
+      <div className="card max-w-2xl lg:max-w-4xl mx-auto">
         <GuidedIntro />
       </div>
 

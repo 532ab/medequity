@@ -30,7 +30,7 @@ export default function AboutPage() {
         <h1 className="text-4xl font-extrabold text-heading">
           {t("about.title")} <span className="bg-gradient-to-r from-lilly-red to-coral bg-clip-text text-transparent">MedEquity</span>
         </h1>
-        <p className="text-sub text-lg leading-relaxed max-w-2xl">
+        <p className="text-sub text-lg leading-relaxed max-w-2xl lg:max-w-4xl">
           {t("about.subtitle")}
         </p>
       </div>
