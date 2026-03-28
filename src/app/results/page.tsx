@@ -14,6 +14,7 @@ import ResultsSkeleton from "@/components/ResultsSkeleton";
 import MedicationChat from "@/components/MedicationChat";
 import RecallBanner from "@/components/RecallBanner";
 import DoctorEscalation from "@/components/DoctorEscalation";
+import FindNearby from "@/components/FindNearby";
 import { DrugLabel, AdverseEvent, ReportsByYear, OutcomeData, SexData, AgeData, RecallAlert } from "@/lib/openFda";
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -171,6 +172,11 @@ function ResultsContent() {
           drugName={label.brandName}
           drugInfo={`Purpose: ${label.purpose}\nUsage: ${label.usage}\nDosage: ${label.dosage}\nWarnings: ${label.warnings.join(" | ")}`}
         />
+      )}
+
+      {/* Find nearby pharmacies */}
+      {label && (
+        <FindNearby drugName={label.brandName} isOTC={label.productType === "OTC"} />
       )}
 
       <SideEffectsChart events={adverseEvents} />
