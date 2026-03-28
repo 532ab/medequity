@@ -72,26 +72,67 @@ export default function DrugInfo({ label }: { label: DrugLabel }) {
     return label.warnings.map((w) => truncateAtBoundary(w, 280));
   };
 
+  const typeColors = {
+    OTC: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+    Prescription: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+    Unknown: "bg-sand/60 text-sub dark:bg-dark-border",
+  };
+
   return (
     <div className="card space-y-5 animate-slide-up">
-      <div className="flex items-start justify-between">
-        <div>
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-2">
           <h3 className="text-xl font-bold text-heading">
             {label.brandName}
             {label.genericName !== label.brandName && (
               <span className="text-base font-normal text-sub ml-2">({label.genericName})</span>
             )}
           </h3>
-        </div>
-        <div className="flex items-center gap-2">
           {aiSummary && (
-            <span className="badge bg-coral/10 text-coral dark:bg-coral/20 text-[10px]">
+            <span className="badge bg-coral/10 text-coral dark:bg-coral/20 text-[10px] shrink-0">
               AI simplified
             </span>
           )}
+        </div>
+
+        {/* Badges row */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`badge text-[10px] ${typeColors[label.productType]}`}>
+            {label.productType === "OTC"
+              ? (locale === "es" ? "Venta libre" : "Over the Counter")
+              : label.productType === "Prescription"
+              ? (locale === "es" ? "Con receta" : "Prescription Only")
+              : (locale === "es" ? "Tipo desconocido" : "Unknown type")}
+          </span>
           {label.genericAvailable && (
-            <span className="badge bg-coral/10 text-coral dark:bg-coral/20">
+            <span className="badge bg-coral/10 text-coral dark:bg-coral/20 text-[10px]">
               {t("drugInfo.genericAvailable")}
+            </span>
+          )}
+          {label.route && (
+            <span className="badge bg-sand/40 dark:bg-dark-border text-sub text-[10px] capitalize">
+              {label.route}
+            </span>
+          )}
+        </div>
+
+        {/* Manufacturer + Pricing context */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-sub">
+          <span className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 7.5h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+            </svg>
+            {label.manufacturer}
+          </span>
+          {label.genericAvailable && label.genericName !== label.brandName && (
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {locale === "es"
+                ? `Genérico disponible — pregunta a tu farmacéutico por ${label.genericName}`
+                : `Generic available — ask your pharmacist for ${label.genericName}`}
             </span>
           )}
         </div>

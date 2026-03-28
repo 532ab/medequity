@@ -4,6 +4,9 @@ export interface DrugLabel {
   name: string;
   brandName: string;
   genericName: string;
+  manufacturer: string;
+  productType: "OTC" | "Prescription" | "Unknown";
+  route: string;
   purpose: string;
   usage: string;
   warnings: string[];
@@ -76,10 +79,18 @@ export async function getDrugLabel(drugName: string): Promise<DrugLabel | null> 
     const result = data.results?.[0];
     if (!result) return null;
 
+    const productType = result.openfda?.product_type?.[0] || "";
+    const typeLabel: "OTC" | "Prescription" | "Unknown" =
+      productType.includes("OTC") ? "OTC" :
+      productType.includes("PRESCRIPTION") ? "Prescription" : "Unknown";
+
     return {
       name: drugName,
       brandName: result.openfda?.brand_name?.[0] || drugName,
       genericName: result.openfda?.generic_name?.[0] || drugName,
+      manufacturer: result.openfda?.manufacturer_name?.[0] || "Unknown manufacturer",
+      productType: typeLabel,
+      route: (result.openfda?.route?.[0] || "").toLowerCase(),
       purpose: cleanText(result.purpose?.[0] || result.indications_and_usage?.[0] || "Information not available"),
       usage: cleanText(result.indications_and_usage?.[0] || "Information not available"),
       warnings: extractWarnings(result),
