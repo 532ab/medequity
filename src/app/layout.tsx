@@ -49,20 +49,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Top nav — minimal on mobile, full on desktop */}
           <nav className="bg-[#f7f9f6]/80 dark:bg-dark-card/80 backdrop-blur-xl border-b border-sand/60 dark:border-dark-border sticky top-0 z-50 transition-colors duration-200" role="navigation" aria-label="Main navigation">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group" aria-label="MedEquity home">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-lilly-red to-coral rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow" aria-hidden="true">
-                  <span className="text-white font-bold text-xs sm:text-sm">M</span>
-                </div>
-                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-lilly-red to-coral bg-clip-text text-transparent">
-                  MedEquity
-                </span>
-              </Link>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group" aria-label="MedEquity home">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-lilly-red to-coral rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow" aria-hidden="true">
+                    <span className="text-white font-bold text-xs sm:text-sm">M</span>
+                  </div>
+                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-lilly-red to-coral bg-clip-text text-transparent">
+                    MedEquity
+                  </span>
+                </Link>
+                <LanguageSwitcher />
+              </div>
               <div className="flex items-center gap-2 sm:gap-4">
                 <DesktopNav />
-                <ThemeToggle />
-                <div className="flex items-center gap-0.5 border-l border-sand/60 dark:border-dark-border pl-2 ml-1">
-                  <LanguageSwitcher />
+                <div className="flex items-center gap-0.5">
                   <TextSizeToggle />
+                  <ThemeToggle />
                 </div>
               </div>
             </div>
