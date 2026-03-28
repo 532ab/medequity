@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageTransition from "@/components/PageTransition";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import TextSizeToggle from "@/components/TextSizeToggle";
 import BottomTabBar from "@/components/BottomTabBar";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
@@ -34,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <script dangerouslySetInnerHTML={{ __html: `
-          (function(){try{var t=localStorage.getItem('theme'),d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})();
+          (function(){try{var t=localStorage.getItem('theme'),d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.classList.add('dark');var s=localStorage.getItem('textSize');if(s==='large')document.documentElement.style.fontSize='115%';if(s==='xlarge')document.documentElement.style.fontSize='130%'}catch(e){}})();
           if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
         `}} />
       </head>
@@ -58,7 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
               <div className="flex items-center gap-2 sm:gap-4">
                 <DesktopNav />
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
+                  <TextSizeToggle />
                   <LanguageSwitcher />
                   <ThemeToggle />
                 </div>
