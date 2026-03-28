@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Html5Qrcode } from "html5-qrcode";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface BarcodeScannerProps {
@@ -13,7 +12,8 @@ export default function BarcodeScanner({ onScan }: BarcodeScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const scannerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const lookupNDC = async (code: string) => {
@@ -66,19 +66,21 @@ export default function BarcodeScanner({ onScan }: BarcodeScannerProps) {
     setScanning(true);
 
     try {
+      const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("barcode-reader");
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 100 } },
-        (decodedText) => {
+        (decodedText: string) => {
           lookupNDC(decodedText);
         },
         () => {}
       );
-    } catch {
-      setError(locale === "es" ? "No se pudo acceder a la cámara" : "Could not access camera");
+    } catch (err) {
+      console.error("Scanner error:", err);
+      setError(locale === "es" ? "No se pudo acceder a la cámara" : "Could not access camera. Make sure you allow camera permissions.");
       setScanning(false);
     }
   };
