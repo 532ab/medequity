@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Top nav — minimal on mobile, full on desktop */}
           <nav className="bg-[#f7f9f6]/80 dark:bg-dark-card/80 backdrop-blur-xl border-b border-sand/60 dark:border-dark-border sticky top-0 z-50 transition-colors duration-200" role="navigation" aria-label="Main navigation">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+            <div className="max-w-4xl lg:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
                 <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group" aria-label="MedEquity home">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-lilly-red to-coral rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow" aria-hidden="true">
@@ -70,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </nav>
 
-          <main id="main-content" className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 w-full" tabIndex={-1}>
+          <main id="main-content" className="flex-1 max-w-4xl lg:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10 w-full" tabIndex={-1}>
             <PageTransition>{children}</PageTransition>
           </main>
 

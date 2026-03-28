@@ -7,7 +7,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-themed py-5 sm:py-6 transition-colors duration-200">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between text-xs text-sub">
+      <div className="max-w-4xl lg:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between text-xs text-sub">
         <span>&copy; {new Date().getFullYear()} {t("footer.copyright")}</span>
         <span>{t("footer.poweredBy")}</span>
       </div>
