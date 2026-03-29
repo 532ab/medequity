@@ -12,32 +12,48 @@ export default function FindNearby({ drugName, isOTC }: FindNearbyProps) {
   const { locale } = useLanguage();
   const [loading, setLoading] = useState(false);
 
+  const [mapsUrl, setMapsUrl] = useState("");
+
   const findPharmacies = () => {
     setLoading(true);
+
+    const fallbackQuery = encodeURIComponent(`${drugName} pharmacy near me`);
+    const fallbackUrl = `https://www.google.com/maps/search/${fallbackQuery}`;
 
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           const query = encodeURIComponent(`${drugName} pharmacy`);
-          window.open(
-            `https://www.google.com/maps/search/${query}/@${latitude},${longitude},14z`,
-            "_blank"
-          );
+          const url = `https://www.google.com/maps/search/${query}/@${latitude},${longitude},14z`;
+          setMapsUrl(url);
           setLoading(false);
+          // Use link click to avoid popup blocker
+          const a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.click();
         },
         () => {
-          // Fallback without location
-          const query = encodeURIComponent(`${drugName} pharmacy near me`);
-          window.open(`https://www.google.com/maps/search/${query}`, "_blank");
+          setMapsUrl(fallbackUrl);
           setLoading(false);
+          const a = document.createElement("a");
+          a.href = fallbackUrl;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.click();
         },
         { timeout: 5000 }
       );
     } else {
-      const query = encodeURIComponent(`${drugName} pharmacy near me`);
-      window.open(`https://www.google.com/maps/search/${query}`, "_blank");
+      setMapsUrl(fallbackUrl);
       setLoading(false);
+      const a = document.createElement("a");
+      a.href = fallbackUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
     }
   };
 
@@ -83,6 +99,17 @@ export default function FindNearby({ drugName, isOTC }: FindNearbyProps) {
           {locale === "es" ? "Buscar farmacias" : "Find pharmacies"}
         </button>
       </div>
+
+      {mapsUrl && (
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center text-xs text-coral hover:text-lilly-red font-medium mt-3 transition-colors"
+        >
+          {locale === "es" ? "Abrir en Google Maps" : "Open in Google Maps"}
+        </a>
+      )}
     </div>
   );
 }
