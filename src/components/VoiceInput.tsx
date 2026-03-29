@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 
 interface VoiceInputProps {
@@ -10,9 +10,12 @@ interface VoiceInputProps {
 export default function VoiceInput({ onResult }: VoiceInputProps) {
   const { locale } = useLanguage();
   const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const supported = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  useEffect(() => {
+    setSupported("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  }, []);
 
   const toggle = () => {
     if (listening) {
@@ -21,9 +24,15 @@ export default function VoiceInput({ onResult }: VoiceInputProps) {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      alert(locale === "es"
+        ? "La entrada de voz no está disponible en este navegador. Intenta con Chrome."
+        : "Voice input is not available on this browser. Try Chrome.");
+      return;
+    }
+
+    const recognition = new SR();
     recognitionRef.current = recognition;
 
     recognition.lang = locale === "es" ? "es-US" : "en-US";
