@@ -59,6 +59,7 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const aiDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const justSelectedRef = useRef(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -71,6 +72,11 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
   }, []);
 
   useEffect(() => {
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
+
     if (!value.trim() || value.length < 1) {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -211,10 +217,12 @@ export default function DrugInput({ value, onChange, placeholder, prefix, requir
   };
 
   const selectSuggestion = (name: string) => {
+    justSelectedRef.current = true;
     onChange(name);
     setSuggestions([]);
     setShowSuggestions(false);
-    inputRef.current?.focus();
+    clearTimeout(debounceRef.current);
+    clearTimeout(aiDebounceRef.current);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
